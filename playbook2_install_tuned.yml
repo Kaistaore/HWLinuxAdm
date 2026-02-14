@@ -1,0 +1,33 @@
+- name: Install and configure tuned
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Install tuned package
+      ansible.builtin.apt:
+        name: tuned
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install tuned package (RedHat)
+      ansible.builtin.yum:
+        name: tuned
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Start and enable tuned service
+      ansible.builtin.systemd:
+        name: tuned
+        state: started
+        enabled: yes
+
+    - name: Verify tuned service status
+      ansible.builtin.systemd:
+        name: tuned
+        state: started
+      register: tuned_status
+
+    - name: Display tuned service status
+      ansible.builtin.debug:
+        msg: "Tuned service is {{ 'active' if tuned_status.status.ActiveState == 'active' else 'inactive' }}"
