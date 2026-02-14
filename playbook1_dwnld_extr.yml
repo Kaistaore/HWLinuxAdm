@@ -1,0 +1,48 @@
+- name: Apache Kafka dwnld & install
+  hosts: local
+  connection: local
+  become: no
+  vars:
+    download_url: "https://dlcdn.apache.org/kafka/4.1.1/kafka_2.13-4.1.1.tgz"
+    archive_name: "kafka_2.13-4.1.1.tgz"
+    extract_dir: "/tmp/kafka"
+    temp_dir: "/tmp"
+  tasks:
+    - name: Create directory extract
+      ansible.builtin.file:
+         path: "{{ extract_dir }}"
+         state: directory
+         mode: '0755'
+
+    - name: Dwnld Kafka
+      ansible.builtin.get_url:
+         url: "{{ download_url }}"
+         dest: "{{ temp_dir }}/{{ archive_name }}"
+         mode: '0644'
+         timeout: 30
+         validate_certs: yes
+
+    - name: Extract Kafka arc
+      ansible.builtin.unarchive:
+        src: "{{ temp_dir }}/{{ archive_name }}"
+        dest: "{{ extract_dir }}"
+        remote_src: yes
+        extra_opts: [--strip-components=1]
+        creates: "{{ extract_dir }}/bin"
+
+    - name: Remove dwnld arc
+      ansible.builtin.file:
+         path: "{{ temp_dir }}/{{ archive_name }}"
+         state: absent
+
+    - name: List extracted files
+      ansible.builtin.command:
+        cmd: ls -la {{ extract_dir }}
+      register: extracted_files
+      changed_when: false
+
+    - name: Show extracted files
+      ansible.builtin.debug:
+        var: extracted_files.stdout_lines
+
+
