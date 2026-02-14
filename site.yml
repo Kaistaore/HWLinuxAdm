@@ -1,0 +1,5 @@
+- name: Configure Apache web server with system information
+  hosts: webservers
+  become: yes
+  roles:
+    - apache_webserver
