@@ -1,0 +1,47 @@
+- name: Configure MOTD with host information
+  hosts: all
+  become: yes
+  vars:
+    admin_wish: "Have a great day, System Administrator!"
+
+  tasks:
+    - name: Get hostname and IP addresses
+      ansible.builtin.set_fact:
+        server_hostname: "{{ ansible_hostname }}"
+        server_ip: "{{ ansible_default_ipv4.address | default(ansible_all_ipv4_addresses[0]) }}"
+
+    - name: Backup original MOTD
+      ansible.builtin.copy:
+        src: /etc/motd
+        dest: /etc/motd.backup_{{ ansible_date_time.epoch }}
+        remote_src: yes
+        mode: '0644'
+      ignore_errors: yes
+
+    - name: Create custom MOTD with system info
+      ansible.builtin.copy:
+        content: |
+          ================================================
+                     SYSTEM INFORMATION
+          ================================================
+          Hostname: {{ server_hostname }}
+          IP Address: {{ server_ip }}
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Kernel: {{ ansible_kernel }}
+
+          {{ admin_wish }}
+
+          Last updated: {{ ansible_date_time.date }} {{ ansible_date_time.time }}
+          ================================================
+        dest: /etc/motd
+        mode: '0644'
+
+    - name: Display current MOTD
+      ansible.builtin.command:
+        cmd: cat /etc/motd
+      register: motd_content
+      changed_when: false
+
+    - name: Show MOTD content
+      ansible.builtin.debug:
+        var: motd_content.stdout_lines
