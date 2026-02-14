@@ -1,0 +1,33 @@
+%
+- name: Configure MOTD with custom greeting
+  hosts: all
+  become: yes
+  vars:
+    motd_greeting: "Welcome to Hell :) GL HF!"
+
+  tasks:
+    - name: Backup original MOTD
+      ansible.builtin.copy:
+        src: /etc/motd
+        dest: /etc/motd.backup
+        remote_src: yes
+        mode: '0644'
+      ignore_errors: yes
+
+    - name: Create custom MOTD
+      ansible.builtin.copy:
+        content: |
+          {{ motd_greeting }}
+          Last configured by Ansible at {{ ansible_date_time.iso8601 }}
+        dest: /etc/motd
+        mode: '0644'
+
+    - name: Display current MOTD
+      ansible.builtin.command:
+        cmd: cat /etc/motd
+      register: motd_content
+      changed_when: false
+
+    - name: Show MOTD content
+      ansible.builtin.debug:
+        var: motd_content.stdout_lines
